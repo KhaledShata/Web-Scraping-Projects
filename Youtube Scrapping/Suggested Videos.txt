@@ -1,0 +1,84 @@
+from bs4 import BeautifulSoup
+import requests
+import unicodedata
+import pandas as pd
+import timeit
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.options import Options
+import re
+import ast
+
+import time
+main = 'https://www.youtube.com'
+
+def get_video(url):
+
+    url = url+'/videos'
+    options = Options()
+    options.add_argument("--headless=new")
+    driver = webdriver.Chrome(options = options)
+    driver.get(url)
+    p='//*[@id="contents"]'
+    x= driver.find_element(By.XPATH , p)
+    soup = BeautifulSoup(x.get_attribute("innerHTML"), 'html.parser')
+    offset = soup.find(class_='style-scope ytd-rich-grid-media').find('a')['href']
+    sub = main+offset
+    driver.quit()
+
+    return sub
+
+def get_similar(url):
+    url = url.replace('/featured','')
+    url = url.replace('/videos','')
+    url = url.replace('/about','')
+
+    vid = get_video(url)
+    
+    #get all suggestions
+    options = Options()
+    options.add_argument("--headless=new")
+    driver = webdriver.Chrome(options = options)
+    driver.get(vid)
+    time.sleep(5)
+    p='//*[@id="dismissible"]/div/div[1]/a'
+    x= driver.find_elements(By.XPATH , p)
+    hrefs = [i.get_attribute('href') for i in x]
+    driver.quit()
+    
+    #for each suggested video get the channel link
+    new_links=[]
+    for j,i in enumerate(hrefs):
+        try:
+            options = Options()
+            options.add_argument("--headless=new")
+            driver = webdriver.Chrome(options = options)
+            driver.get(i)
+            time.sleep(5)
+            p='//*[@id="text"]/a'
+            x= driver.find_elements(By.XPATH , p)
+            l = x[0].get_attribute('href')
+            driver.quit()
+            new_links.append(l)
+        except:
+            pass
+    
+    return new_links
+        
+    
+    
+    new_links = []
+for j,i in enumerate(s):
+    print(j)
+    try:
+        links = get_similar(i)
+        for k in links:
+            with open(r'E:\Upwork\resub\new\eco_new.txt', 'a') as f:
+                f.write(str(k))
+                f.write('\n')
+
+        new_links = new_links + links
+    except:
+        pass    

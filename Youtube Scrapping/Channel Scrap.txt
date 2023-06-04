@@ -1,0 +1,67 @@
+
+
+
+from bs4 import BeautifulSoup
+import requests
+import unicodedata
+import pandas as pd
+import timeit
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.options import Options
+import re
+import ast
+
+def get_mails(text):
+    pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+    matches = re.findall(pattern, text)
+    return matches
+
+def search_for_email(url):
+    url = url+'/about'
+    options = Options()
+    options.add_argument("--headless=new")
+    driver = webdriver.Chrome(options = options)
+    driver.get(url)
+    p='//*[@id="description"]'
+    p='//*[@id="description-container"]'
+    desc  = driver.find_element(By.XPATH,p)
+    desc_html = desc.get_attribute('innerHTML')
+    soup = BeautifulSoup(desc_html, 'html.parser')
+    
+
+    element = soup.find('yt-formatted-string', {'class': 'style-scope ytd-channel-about-metadata-renderer', 'id': 'description'})
+
+    return element.text.strip().replace('\n',' ')
+def get_channel(url):
+    url = url.replace('/featured','')
+    url = url.replace('/videos','')
+    url = url.replace('/about','')
+
+
+    options = Options()
+    options.add_argument("--headless=new")
+    driver = webdriver.Chrome(options = options)
+    driver.get(url)
+    p='//*[@id="text"]'
+    name = driver.find_element(By.XPATH, p).text.strip()
+
+    p='//*[@id="subscriber-count"]'
+    count = driver.find_element(By.XPATH, p).text.strip().split(' ')[0]
+    driver.quit()
+    try:
+        desc = search_for_email(url)
+        possible = get_mails(desc)
+    except:
+        possible = []
+    
+    channel ={}
+    channel['Channel URL'] = url
+    channel['Channel Name'] = name
+    channel['Subscribers Count'] = count
+    channel['Contact Email'] = possible
+
+    return channel
+    
